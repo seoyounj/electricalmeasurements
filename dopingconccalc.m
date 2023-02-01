@@ -1,18 +1,17 @@
 %% setup. change variables here!!!
 
 % change the radius of the diodes here in cm
-radius = 0.0500/2;
+radius = 0.0100/2;
 
-% just for file naming later down the road
-type = 'preanneal';
-
-
-filenamein = 'pre_anneal_500um_C-V.xlsx';
-opts = detectImportOptions(filenamein);
-opts = setvartype(opts, 'string');  %or 'char' if you prefer
-data = readtable(filenamein, opts);
+filenamein = 'book1';
 
 %% data processing
+numVars = 4;
+varNames = {'Var1','Var2','Var3','Var4'};
+varTypes = {'char','char','char','char'} ;
+opts = spreadsheetImportOptions('NumVariables',numVars,'VariableNames',varNames,'VariableTypes',varTypes);
+data = readtable(filenamein, opts);
+
 data.Properties.VariableNames{1} = 'Var1';
 data.Properties.VariableNames{2} = 'Var2';
 data.Properties.VariableNames{3} = 'Var3';
@@ -55,31 +54,18 @@ filename = strcat(strrep(filenamein, '.xlsx',''),'_dopingconcentrations.xlsx');
 values = cell(size(names,1),2);
 values(1,1:2) = {'diode name', 'doping concentration'};
 
-
 %for loop where we find the doping concentration of each C-V curve.
 for c = 1:s    
     % graphing
     voltageplaceholder = cell2mat(datacell(c,2));
     capacitanceplaceholder = cell2mat(datacell(c,3));
     
-%     f = plot(voltageplaceholder, currentplaceholder);
-%     title('I-V measurement curves');
-%     xlabel('voltage (V)');
-%     ylabel('current (Amps)');
-%     
-%     if isempty(char(names(c)))
-%         saveas(gcf,'placeholder.png');
-%     else
-%     saveas(gcf,char(strcat(names(c),'.png')));
-%     end
-    
     % Calc doping concentration and write to spreadsheet
-    values(c+1,1) = {names(c)};
+    values(c+1,1) = {str2double(cell2mat(extractAfter(names(c), 'um_')))};
     values(c+1,2)= {dopingconc(voltageplaceholder, capacitanceplaceholder, radius)};
-    
-    writecell(values,filename,'Sheet',1,'Range','A1');
 end
 
+writecell(values,filename,'Sheet',1,'Range','A1');
 
 function doping = dopingconc(voltage, capacitance, r)
     p = polyfit(voltage, 1./((capacitance).^2), 1);
@@ -95,4 +81,3 @@ function doping = dopingconc(voltage, capacitance, r)
     
     doping = (1/p(1))*(2/(q*A^2*es*eo));
 end
-
