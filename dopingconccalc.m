@@ -1,9 +1,9 @@
 %% setup. change variables here!!!
 
 % change the radius of the diodes here in cm
-radius = 0.0100/2;
+radius = 0.0125/2;
 
-filenamein = 'book1';
+filenamein = 'pre_anneal_100um_C-V';
 
 %% data processing
 numVars = 4;
@@ -60,8 +60,9 @@ for c = 1:s
     voltageplaceholder = cell2mat(datacell(c,2));
     capacitanceplaceholder = cell2mat(datacell(c,3));
     
-    % Calc doping concentration and write to spreadsheet
+%     Calc doping concentration and write to spreadsheet
     values(c+1,1) = {str2double(cell2mat(extractAfter(names(c), 'um_')))};
+%     values(c+1, 1) = names(c);
     values(c+1,2)= {dopingconc(voltageplaceholder, capacitanceplaceholder, radius)};
 end
 
