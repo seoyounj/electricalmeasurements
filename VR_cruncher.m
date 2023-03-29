@@ -2,9 +2,9 @@
 
 % change the filename that you want to read from. this should be an excel
 % file
-filenamein = 'I_V Sweep Pre_Anneal_(010)_PLD';
+filenamein = 'I_V Sweep Pre_Anneal_(010)_PLD_9-14';
 % number of sets of data
-sets = 8;
+sets = [9,10,11,12,13,14];
 % number of different distances
 dvals = [10,20,30,40,50,60];
 distances = length(dvals);
@@ -21,6 +21,9 @@ data = readtable(filenamein, opts);
 % find rows with names
 namerows = strcmp(data.Var2, 'TestRecord.Remarks');
 names = data.Var3(namerows);
+
+index = cellfun(@isempty, names); %replace empty values
+names(index) = {'placeholder'}; % all of the empty values will be named placeholder. delete these
 
 % find rows with step values
 steprows = strcmp(data.Var1, 'Dimension1');
@@ -71,10 +74,10 @@ end
 t = table(resistances);
 t.Properties.RowNames = names;
 
-setsmatrix = zeros(sets,distances);
-for c = 1:sets
-    hasname = contains(names, ['Set',' ', int2str(c)]) | ...
-        contains(names, ['Set', int2str(c)]);
+setsmatrix = zeros(length(sets),distances);
+for c = 1:length(sets)
+    hasname = contains(names, ['Set',' ', int2str(sets(c))]) | ...
+        contains(names, ['Set', int2str(sets(c))]);
     holder = names(hasname);
     resistanceholder = resistances(hasname);
     
@@ -85,13 +88,13 @@ for c = 1:sets
 end
 
 %% Graph d vs. R
-for c = 1:sets
+for c = 1:length(sets)
     % make the figure, fit to a linear model, graph
     r = setsmatrix(c,:);
     mdl = fitlm(dvals, r);
     f=figure
     plot(mdl)
-    title(['Set ', int2str(c)]);
+    title(['Set ', int2str(sets(c))]);
     xlabel('Distance (um)');
     ylabel('Calculated resistance (Ohms)');
     
@@ -102,6 +105,6 @@ for c = 1:sets
     annotation('textbox',[.15 0.9 0 0],'string',str,'FitBoxToText','on','EdgeColor','black')   
     
     % save as png file 
-    exportgraphics(gca,['Set ', int2str(c), ' distance vs. resistance chart.png'],'Resolution',300)
+    exportgraphics(gca,['Set ', int2str(sets(c)), ' distance vs. resistance chart.png'],'Resolution',300)
     close(f)
 end
