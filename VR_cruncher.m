@@ -3,11 +3,15 @@
 % change the filename that you want to read from. this should be an excel
 % file
 filenamein = 'I_V Sweep Pre_Anneal_(010)_PLD_9-14';
-% number of sets of data
+% set numbers
 sets = [9,10,11,12,13,14];
 % number of different distances
 dvals = [10,20,30,40,50,60];
 distances = length(dvals);
+
+% size of interior radius (in um)
+r1 = 100;
+r1 = 100*10^-6;
 
 %% import file
 numVars = 4;
@@ -87,14 +91,29 @@ for c = 1:length(sets)
     end
 end
 
+%% calculations/graphing
+rhovalues = zeros(1, length(sets));
 %% Graph d vs. R
 for c = 1:length(sets)
     % make the figure, fit to a linear model, graph
     r = setsmatrix(c,:);
+    name = int2str(sets(c));
     mdl = fitlm(dvals, r);
-    f=figure
+    grapher(name, mdl);
+
+    % find specific contact resistance
+    rhovalues(c)=abs(specificcontactresistcalc(mdl, r1));
+end
+sets = sets.';
+rhovalues = rhovalues.';
+outputtable = table(sets, rhovalues);
+writetable(outputtable, [filenamein, 'rhovalues.xlsx']);
+
+%% functions
+function g = grapher(name, mdl)
+    g=figure
     plot(mdl)
-    title(['Set ', int2str(sets(c))]);
+    title(['Set ', name]);
     xlabel('Distance (um)');
     ylabel('Calculated resistance (Ohms)');
     
@@ -105,6 +124,18 @@ for c = 1:length(sets)
     annotation('textbox',[.15 0.9 0 0],'string',str,'FitBoxToText','on','EdgeColor','black')   
     
     % save as png file 
-    exportgraphics(gca,['Set ', int2str(sets(c)), ' distance vs. resistance chart.png'],'Resolution',300)
-    close(f)
+    exportgraphics(gca,['Set ', name, ' distance vs. resistance chart.png'],'Resolution',300)
+    close(g)
+end
+
+function rho = specificcontactresistcalc(linearfitmodel, r1) 
+    % pull values from linear model (mx+b=y)
+    b = table2array(linearfitmodel.Coefficients(1,1));
+    m = table2array(linearfitmodel.Coefficients(2,1));
+
+    R = -(b/m)/2;
+    r_c = R*2*pi()*r1;
+    L_T = b/2;
+
+    rho = r_c*L_T;
 end
